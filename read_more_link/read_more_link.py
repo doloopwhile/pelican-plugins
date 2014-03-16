@@ -14,7 +14,7 @@ from pelican.utils import truncate_html_words
 
 try:
     from lxml.html import fragment_fromstring, fragments_fromstring, tostring
-    from lxml.etree import ParserError
+    from lxml.etree import ParserError, Comment
 except ImportError:
     raise Exception("Unable to find lxml. To use READ_MORE_LINK, you need lxml")
 
@@ -40,6 +40,20 @@ def insert_into_last_element(html, element):
         return b''
 
 
+def truncate_html_until_comment(html, comment):
+    try:
+        doc = fragments_fromstring(html)
+    except (ParserError, TypeError) as e:
+        return b''
+
+    for i, node in enumerate(doc):
+        if node.tag == Comment and node.text.strip().lower() == comment.lower():
+            break
+    else:
+        i = len(doc)
+    return b''.join(tostring(e) for e in doc[:i])
+
+
 def insert_read_more_link(instance):
     """
     Insert an inline "read more" link into the last element of the summary
@@ -55,11 +69,14 @@ def insert_read_more_link(instance):
     READ_MORE_LINK = instance.settings.get('READ_MORE_LINK', None)
     READ_MORE_LINK_FORMAT = instance.settings.get('READ_MORE_LINK_FORMAT',
                                                   '<a class="read-more" href="/{url}">{text}</a>')
+    READ_MORE_COMMENT = instance.settings.get('READ_MORE_COMMENT', None)
 
     if not (SUMMARY_MAX_LENGTH and READ_MORE_LINK and READ_MORE_LINK_FORMAT): return
 
     if hasattr(instance, '_summary') and instance._summary:
         summary = instance._summary
+    elif READ_MORE_COMMENT:
+        summary = truncate_html_until_comment(instance.content, READ_MORE_COMMENT)
     else:
         summary = truncate_html_words(instance.content, SUMMARY_MAX_LENGTH)
 
