@@ -35,10 +35,10 @@ def insert_into_last_element(html, element):
     try:
         doc = fragments_fromstring(html)
         doc[-1].append(item)
+        return b''.join(tostring(e) for e in doc)
+    except (ParserError, TypeError) as err:
+        return b''
 
-        return ''.join(tostring(e) for e in doc)
-    except (ParserError, TypeError):
-        return ''
 
 def insert_read_more_link(instance):
     """
@@ -65,7 +65,7 @@ def insert_read_more_link(instance):
 
     if summary<instance.content:
         read_more_link = READ_MORE_LINK_FORMAT.format(url=instance.url, text=READ_MORE_LINK)
-        instance._summary = insert_into_last_element(summary, read_more_link)
+        instance._summary = insert_into_last_element(summary, read_more_link).decode('utf-8')
 
 def register():
     signals.content_object_init.connect(insert_read_more_link)
