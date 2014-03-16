@@ -63,7 +63,7 @@ def insert_read_more_link(instance):
     else:
         summary = truncate_html_words(instance.content, SUMMARY_MAX_LENGTH)
 
-    if summary<instance.content:
+    if len(summary) < len(instance.content):
         read_more_link = READ_MORE_LINK_FORMAT.format(url=instance.url, text=READ_MORE_LINK)
         instance._summary = insert_into_last_element(summary, read_more_link).decode('utf-8')
 
